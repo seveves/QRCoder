@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Collections;
 using System.Reflection;
+using Newtonsoft.Json;
 
 namespace QRCoder
 {
@@ -40,7 +41,8 @@ namespace QRCoder
             var version = this.GetVersion(dataInputLength, encoding, eccLevel);
 
             var modeIndicator = DecToBin((int)encoding, 4);
-            var countIndicator = DecToBin(dataInputLength, this.GetCountIndicatorLength(version, encoding));
+            var countIndicatorLength = this.GetCountIndicatorLength(version, encoding);
+            var countIndicator = DecToBin(dataInputLength, countIndicatorLength);
             var bitString = modeIndicator + countIndicator;
 
 
@@ -292,7 +294,9 @@ namespace QRCoder
                             {
                                 if (!IsBlocked(new Rectangle(x, y, 1, 1), blockedModules))
                                 {
-                                    qrTemp.ModuleMatrix[y][x] ^= (bool)pattern.Invoke(null, new object[] { x, y });
+                                    var bPattern = (bool) pattern.Invoke(null, new object[] {x, y});
+                                    var mPattern = qrTemp.ModuleMatrix[y][x];
+                                    qrTemp.ModuleMatrix[y][x] = mPattern ^ bPattern;
                                 }
                             }
                         }
@@ -811,7 +815,8 @@ namespace QRCoder
         private static string DecToBin(int decNum, int padLeftUpTo)
         {
             var binStr = DecToBin(decNum);
-            return binStr.PadLeft(padLeftUpTo, '0');
+            var ret = binStr.PadLeft(padLeftUpTo, '0');
+            return ret;
         }
 
         private int GetCountIndicatorLength(int version, EncodingMode encMode)
